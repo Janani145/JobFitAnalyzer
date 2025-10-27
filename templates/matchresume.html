@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Resume Matcher (Dashboard)</title>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+  <style>
+    body { background:#f8f9fa; }
+    .container{ margin-top:30px; }
+    .card{ border-radius:10px; box-shadow:0 4px 8px rgba(0,0,0,0.06); }
+    .card-header{ background:#007bff; color:#fff; }
+    .skill-badge{ margin:3px; }
+    .anon-note{ font-size:0.9rem; color:#6c757d; }
+    .wc-img{ max-width:100%; height:auto; }
+  </style>
+</head>
+<body>
+<div class="container">
+  <div class="card">
+    <div class="card-header text-center">
+      <h3>Job Description & Resume Matcher</h3>
+    </div>
+    <div class="card-body">
+      <form method="POST" action="/matcher" enctype="multipart/form-data">
+        <div class="form-group">
+          <label for="job_description">Job Description</label>
+          <textarea id="job_description" name="job_description" class="form-control" rows="5" required></textarea>
+          <small class="form-text text-muted">Describe the role and required skills.</small>
+        </div>
+        <div class="form-group">
+          <label for="resumes">Upload Resumes</label>
+          <input id="resumes" name="resumes" type="file" multiple class="form-control" accept=".pdf,.docx,.txt" required>
+          <small class="form-text text-muted">Supported: pdf, docx, txt.</small>
+        </div>
+        <button class="btn btn-primary">Match Resumes</button>
+      </form>
+    </div>
+  </div>
+
+  {% if message %}
+  <div class="card mt-4">
+    <div class="card-body">
+      <h5>{{ message }}</h5>
+
+      {% if suggested_skills %}
+      <p><strong>Suggested skills (from JD):</strong></p>
+      {% for skill in suggested_skills %}
+        <span class="badge badge-info skill-badge">{{ skill }}</span>
+      {% endfor %}
+      {% endif %}
+
+      {% if wordcloud %}
+      <div class="mt-3">
+        <h6>Skill Wordcloud</h6>
+        <img class="wc-img" src="{{ url_for('static_images', filename=wordcloud) }}" alt="wordcloud"/>
+      </div>
+      {% endif %}
+
+      {% if top_candidates %}
+      <hr>
+      <h6>Top Candidates</h6>
+      <table class="table table-sm table-bordered">
+        <thead class="thead-light">
+          <tr>
+            <th>Candidate ID</th>
+            <th>Score</th>
+            <th>Coverage</th>
+            <th>Matched Skills</th>
+            <th>Missing Skills</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for c in top_candidates %}
+          <tr>
+            <td>{{ c.id }}<br><small>{{ c.orig_filename }}</small></td>
+            <td>{{ c.score }}</td>
+            <td>{{ c.coverage }}%</td>
+            <td>
+              {% for s in c.matched_skills %}
+                <span class="badge badge-success">{{ s }}</span>
+              {% endfor %}
+              {% if not c.matched_skills %}
+                <span class="text-muted">None</span>
+              {% endif %}
+            </td>
+            <td>
+              {% for s in c.missing_skills %}
+                <span class="badge badge-warning">{{ s }}</span>
+              {% endfor %}
+              {% if not c.missing_skills %}
+                <span class="text-muted">None</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+
+      <div class="row">
+        <div class="col-md-6"><canvas id="scoreChart"></canvas></div>
+        <div class="col-md-6"><canvas id="coverageChart"></canvas></div>
+      </div>
+
+      {% if report_file %}
+      <div class="mt-3">
+        <a class="btn btn-outline-primary" href="{{ url_for('download_report', filename=report_file) }}">Download PDF Report</a>
+        <p class="anon-note">Report contains anonymized IDs, scores, matched and missing skills.</p>
+      </div>
+      {% endif %}
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+const labels = {{ chart_labels|default([])|tojson }};
+const scores = {{ chart_scores|default([])|tojson }};
+const coverages = {{ chart_coverages|default([])|tojson }};
+
+if(labels.length){
+  new Chart(document.getElementById('scoreChart'), {
+    type:'bar',
+    data:{
+      labels: labels.map(l => l.id),
+      datasets:[{
+        label:'Similarity Score',
+        data: scores,
+        backgroundColor:'rgba(54,162,235,0.6)',
+        borderColor:'rgba(54,162,235,1)',
+        borderWidth:1
+      }]
+    },
+    options:{
+      plugins:{
+        tooltip:{
+          callbacks:{
+            label:function(context){
+              let idx=context.dataIndex;
+              let cand=labels[idx];
+              return `ID: ${cand.id}, File: ${cand.file}, Score: ${context.raw}`;
+            }
+          }
+        }
+      },
+      scales:{y:{beginAtZero:true}}
+    }
+  });
+
+  new Chart(document.getElementById('coverageChart'), {
+    type:'bar',
+    data:{
+      labels: labels.map(l => l.id),
+      datasets:[{
+        label:'Skill Coverage (%)',
+        data: coverages,
+        backgroundColor:'rgba(75,192,192,0.6)',
+        borderColor:'rgba(75,192,192,1)',
+        borderWidth:1
+      }]
+    },
+    options:{
+      plugins:{
+        tooltip:{
+          callbacks:{
+            label:function(context){
+              let idx=context.dataIndex;
+              let cand=labels[idx];
+              return `ID: ${cand.id}, File: ${cand.file}, Coverage: ${context.raw}%`;
+            }
+          }
+        }
+      },
+      scales:{y:{beginAtZero:true,max:100}}
+    }
+  });
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Home - Recruitment System</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+</head>
+<body>
+<!-- Navbar -->
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+  <div class="container-fluid">
+    <a class="navbar-brand" href="{{ url_for('home') }}">Recruitment System</a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
+      aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarNav">
+      <ul class="navbar-nav ms-auto">
+        <li class="nav-item">
+          <a class="nav-link active" href="{{ url_for('home') }}">Home</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="{{ url_for('matchresume') }}">Resume Matcher</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="{{ url_for('resume_maker') }}">Resume Maker</a>
+        </li>
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<div class="container mt-5">
+    <div class="text-center">
+        <h1 class="mb-4">Welcome to the Recruitment System</h1>
+        <p class="lead">Easily match resumes with job descriptions and create professional resumes.</p>
+        <a href="{{ url_for('matchresume') }}" class="btn btn-primary btn-lg me-2">Go to Resume Matcher</a>
+        <a href="{{ url_for('resume_maker') }}" class="btn btn-success btn-lg">Go to Resume Maker</a>
+    </div>
+</div>
+</body>
+</html>
